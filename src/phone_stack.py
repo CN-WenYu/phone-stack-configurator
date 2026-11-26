@@ -23,19 +23,21 @@ from stack_locks import (
 )
 
 
-SLOT_LENGTH = 180.0
-SLOT_DEPTH = 90.0
+SLOT_LENGTH = 165.0
+SLOT_DEPTH = 82.0
 SLOT_HEIGHT = 19.0
 BACK_WIDTH = 4.0
 BEARING_HEIGHT = 3.2
 STOP_HEIGHT = 3.0
 POST_DEPTH = 12.0
 OUTER_RIB = 3.2
+SIDE_RAIL_INSET = SIDE_WIDTH - OUTER_RIB
+CHARGING_OPENING = 18.0
 PATTERNS = ("honeycomb", "diamond", "triangle")
 OPEN_AREA_STEPS = tuple(range(35, 61, 5))
 DEFAULT_OPEN_AREA = 50
-PHONE_LENGTH = 176.0
-PHONE_WIDTH = 87.0
+PHONE_LENGTH = 157.0
+PHONE_WIDTH = 77.0
 PHONE_THICKNESS = 16.0
 OPEN_VARIANTS = {
     "phone-stack-long-edge": (SLOT_LENGTH, SLOT_DEPTH, 58.0, True),
@@ -141,7 +143,7 @@ def perforate(panel, posts, pattern, open_area):
 
 def tray_mesh(slot_across, slot_in, finger_width, long_entry,
               pattern="honeycomb", open_area=DEFAULT_OPEN_AREA, *, lock=PULL_SNAP, front_corner=False):
-    length = slot_across + 2 * SIDE_WIDTH
+    length = round(slot_across + 2 * SIDE_WIDTH, 3)
     depth = slot_in + BACK_WIDTH
     half = length / 2
     perimeter = clipped_rectangle(0, 0, length, depth, 2.5)
@@ -152,21 +154,24 @@ def tray_mesh(slot_across, slot_in, finger_width, long_entry,
         box(x0, y0, x1, y1) for x0, x1 in sides for y0, y1 in ends
     ]))
     front = list(front_rail(length, finger_width).coords)[1:-1]
-    panel = perimeter.intersection(Polygon([(0, 0), *[
+    outline = Polygon([(0, 0), *[
         (x, y - edge) for x, y in front
-    ], (length, 0), (length, depth), (0, depth)]))
+    ], (length, 0), (length, depth), (0, depth)])
+    deck = box(SIDE_RAIL_INSET, 0, length - SIDE_RAIL_INSET, depth)
+    panel = outline.intersection(deck.union(posts))
     base = perforate(panel, posts, pattern, open_area)
-    opening_center, opening_width = (
-        (0.55 * slot_in, 53.0) if long_entry else (slot_in - 41, 38.0)
-    )
-    low, high = opening_center - opening_width / 2, opening_center + opening_width / 2
+    low = (depth - CHARGING_OPENING) / 2
+    high = depth - low
     stops = unary_union([
         box(left, start, right, end)
-        for left, right in ((0, OUTER_RIB), (length - OUTER_RIB, length))
+        for left, right in ((SIDE_RAIL_INSET, SIDE_RAIL_INSET + OUTER_RIB),
+                            (length - SIDE_RAIL_INSET - OUTER_RIB, length - SIDE_RAIL_INSET))
         for start, end in ((0, low), (high, depth))
     ] + [box(0, depth - OUTER_RIB, length, depth)])
     if not long_entry:
-        stops = stops.difference(box(half - 15, depth - OUTER_RIB - 1, half + 15, depth + 1))
+        opening_half = CHARGING_OPENING / 2
+        stops = stops.difference(box(half - opening_half, depth - OUTER_RIB - 1,
+                                     half + opening_half, depth + 1))
     rails = base.intersection(unary_union([posts, stops]))
     centers = [((x0 + x1) / 2, (y0 + y1) / 2)
                for x0, x1 in sides for y0, y1 in ends]
@@ -385,15 +390,16 @@ def pack_preview_mesh(triangles, percent):
 def write_preview_data(path):
     data = {"bearing": BEARING_HEIGHT, "pitch": PITCH, "postWidth": SIDE_WIDTH,
             "postDepth": POST_DEPTH, "socketDepth": PULL_SOCKET[-1][0],
+            "chargingOpening": CHARGING_OPENING,
             "phone": {"length": PHONE_LENGTH, "width": PHONE_WIDTH, "thickness": PHONE_THICKNESS},
             "variants": {}}
     designs = [("long", "横向长边取机"), ("full", "侧向全收纳"), ("overhang", "侧向外悬三分之一")]
     meshes = bytearray()
     for (key, label), dims in zip(designs, OPEN_VARIANTS.values()):
         width, insertion, *_ = dims
-        variant = {"label": label, "across": width + 2 * SIDE_WIDTH,
+        variant = {"label": label, "across": round(width + 2 * SIDE_WIDTH, 3),
                    "depth": insertion + BACK_WIDTH, "height": round(PITCH + PULL_SNAP_TOP, 2),
-                   "insertion": insertion, "patterns": {}}
+                   "insertion": insertion, "rearOpening": not dims[-1], "patterns": {}}
         for pattern in PATTERNS:
             variants = {}
             for step in OPEN_AREA_STEPS:

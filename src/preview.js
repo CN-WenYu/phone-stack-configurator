@@ -7,7 +7,7 @@ try {
     .pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   const header = new DataView(unpacked);
   const metadataLength = header.getUint32(0, true);
-  const { bearing, pitch, postWidth, postDepth, socketDepth, phone, variants } = JSON.parse(
+  const { bearing, pitch, postWidth, postDepth, socketDepth, chargingOpening, phone, variants } = JSON.parse(
     new TextDecoder().decode(new Uint8Array(unpacked, 4, metadataLength))
   );
   const meshBuffer = new DataView(unpacked, 4 + metadataLength);
@@ -98,21 +98,30 @@ try {
     return { vertices, triangles, percent };
   }
 
+  function resizeAxis(span, inset, delta, opening) {
+    if (Math.abs(delta) < 1e-5) return [];
+    if (!opening) return [[inset, span - inset, delta]];
+    const left = (span - opening) / 2;
+    return [[inset, left, delta / 2], [span - left, span - inset, delta / 2]];
+  }
+
   function resizeMesh(mesh, template, size) {
     const axes = [
-      [postWidth, template.across - postWidth, size.across - template.across],
-      [postDepth, template.depth - postDepth, size.depth - template.depth],
-      [socketDepth, pitch, size.pitch - pitch],
+      resizeAxis(template.across, postWidth, size.across - template.across, template.rearOpening ? chargingOpening : 0),
+      resizeAxis(template.depth, postDepth, size.depth - template.depth, chargingOpening),
+      Math.abs(size.pitch - pitch) < 1e-5 ? [] : [[socketDepth, pitch, size.pitch - pitch]],
     ];
-    if (axes.every(([, , delta]) => Math.abs(delta) < 1e-5)) return mesh;
+    if (axes.every(segments => segments.length === 0)) return mesh;
     const vertices = [];
     const triangles = [];
     const index = new Map();
     function add(point) {
       const coordinates = point.map((value, axis) => {
-        const [start, stop, delta] = axes[axis];
-        const weight = Math.min(1, Math.max(0, (value - start) / (stop - start)));
-        return Math.round((value + weight * delta) * 100000) / 100000;
+        const shift = axes[axis].reduce((sum, [start, stop, delta]) => {
+          const weight = Math.min(1, Math.max(0, (value - start) / (stop - start)));
+          return sum + weight * delta;
+        }, 0);
+        return Math.round((value + shift) * 100000) / 100000;
       });
       const key = coordinates.join(',');
       if (!index.has(key)) {
@@ -144,9 +153,10 @@ try {
 
     for (let i = 0; i < mesh.triangles.length; i += 3) {
       let faces = [[...mesh.triangles.subarray(i, i + 3)].map(n => [...mesh.vertices.subarray(n * 3, n * 3 + 3)])];
-      for (const [axis, [start, stop, delta]] of axes.entries()) {
-        if (Math.abs(delta) < 1e-5) continue;
-        for (const plane of [start, stop]) faces = faces.flatMap(face => split(face, axis, plane));
+      for (const [axis, segments] of axes.entries()) {
+        for (const [start, stop] of segments) {
+          for (const plane of [start, stop]) faces = faces.flatMap(face => split(face, axis, plane));
+        }
       }
       for (const face of faces) {
         const corners = face.map(add).filter((value, n, ids) => value !== ids[(n + ids.length - 1) % ids.length]);
@@ -260,8 +270,10 @@ try {
       shelf.position.y = layer * size.pitch;
       assembly.trays.add(shelf);
     }
+    const phoneEnd = template.rearOpening ? size.insertion
+      : Math.min(size.insertion, (size.depth + phone.width) / 2);
     for (const accessories of [assembly.phones, assembly.cables]) {
-      accessories.position.z = template.insertion - size.insertion;
+      accessories.position.z = template.insertion - phoneEnd;
       accessories.children[1].position.y += size.pitch - (assembly.accessoryPitch ?? pitch);
     }
     assembly.accessoryPitch = size.pitch;

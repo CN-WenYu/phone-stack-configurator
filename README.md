@@ -13,7 +13,11 @@
 3. 输入以毫米为单位的**单层外尺寸**，点击「应用尺寸」。外部高度包含顶部卡扣，页面会同时显示内部净尺寸或承托范围。四角卡扣、插孔和托板厚度在调尺寸时保持原尺寸。
 4. 旋转模型检查取机口和充电开口，点击「导出当前单层 STL」，用 Bambu Studio 或其他切片软件打开。导出的 STL 按毫米建模，每多叠一层就多打印一份。
 
-量手机时，把保护壳和镜头凸起计入外尺寸，用实测值对照页面显示的净尺寸。页面内的手机示例为 **176 × 87 × 16 mm**。
+左右围挡朝向手机的内侧面与立柱内侧面齐平。充电缺口净宽 **18 mm**。横向款充电时将手机接口对准侧面缺口，试装时以插头外壳的实测宽度为准。
+
+量手机时，把保护壳和镜头凸起计入外尺寸，用实测值对照页面显示的净尺寸。页面内的示例为 **157 × 77 × 16 mm**，厚度是预览用的示例值。
+
+默认净空参考不同尺寸的直板手机。小米 17 和 iPhone 17 的裸机约为 150 × 72 mm，Galaxy A56 5G、REDMI Note 15 Pro 5G 和 iPhone 17 Pro Max 的裸机长约 162–164 mm、宽约 77–78 mm。带壳尺寸请以实测为准。[小米 17](https://www.mi.com/global/product/xiaomi-17/specs/) · [iPhone 17](https://support.apple.com/en-us/125089) · [Galaxy A56 5G](https://www.samsung.com/uk/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566bzkceub/) · [REDMI Note 15 Pro 5G](https://www.mi.com/global/product/redmi-note-15-pro-5g/specs/) · [iPhone 17 Pro Max](https://support.apple.com/en-us/125091)
 
 ## 默认模型
 
@@ -21,9 +25,9 @@
 
 | 款式 | 单层外尺寸 | 内部净尺寸或承托范围 | 下载 |
 | --- | --- | --- | --- |
-| 横向取机（长边开口） | 198 × 94 × 27.05 | 180 × 90 × 19 | [3MF](models/phone-stack-long-edge.3mf) · [STL](models/phone-stack-long-edge.stl) |
-| 侧向全收纳（短边开口） | 184 × 108 × 27.05 | 180 × 90 × 19 | [3MF](models/phone-stack-short-edge.3mf) · [STL](models/phone-stack-short-edge.stl) |
-| 侧向外悬（短边开口） | 121.333 × 108 × 27.05 | 117.333 × 90 × 19（承托范围） | [3MF](models/phone-stack-short-overhang.3mf) · [STL](models/phone-stack-short-overhang.stl) |
+| 横向取机（长边开口） | 183 × 86 × 27.05 | 165 × 82 × 19 | [3MF](models/phone-stack-long-edge.3mf) · [STL](models/phone-stack-long-edge.stl) |
+| 侧向全收纳（短边开口） | 169 × 100 × 27.05 | 165 × 82 × 19 | [3MF](models/phone-stack-short-edge.3mf) · [STL](models/phone-stack-short-edge.stl) |
+| 侧向外悬（短边开口） | 108.667 × 100 × 27.05 | 104.667 × 82 × 19（承托范围） | [3MF](models/phone-stack-short-overhang.3mf) · [STL](models/phone-stack-short-overhang.stl) |
 
 ## 切片与试装
 
